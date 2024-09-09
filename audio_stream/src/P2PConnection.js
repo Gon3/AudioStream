@@ -21,6 +21,10 @@ const replaceCallListener = (inputId, callback) => {//helper function for replac
                     remoteStream = remoteAudioStream;
                     callback(remoteAudioStream); //send audio stream from remote peer
                 });
+                incoming.on('close', () => {
+                    disconnectPeer();
+                    callback(null);
+                });
             }); 
             //console.log(call);
         };
@@ -57,10 +61,19 @@ const makeCall = (userId, inputId, callback) => { //what to do when initiating c
             remoteStream = remoteAudioStream;
             callback(remoteAudioStream); //send audio stream from remote peer
         });
+        call.on('close', () => {
+            disconnectPeer();
+            callback(null);
+        });
     }).catch(err => console.log(err));
+}
+
+const disconnectPeer = () => {
+    //if(peer) peer.disconnect(); 
+    if(call){ call.close(); call = null;}
 }
 
 const getLocalStream = () => localStream;
 const getRemoteStream = () => remoteStream;
 
-export {initializePeer, makeCall, switchInput, getLocalStream, getRemoteStream};
+export {initializePeer, makeCall, switchInput, disconnectPeer, getLocalStream, getRemoteStream};

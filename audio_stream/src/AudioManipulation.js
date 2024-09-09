@@ -36,4 +36,4 @@ const disconnectFilters = () => {
     } 
 }
 
-export {connectFilters, disconnectFilters }; 
+export {connectFilters, disconnectFilters}; 

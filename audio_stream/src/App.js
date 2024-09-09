@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { initializePeer, makeCall, switchInput } from './P2PConnection';
-import { connectFilters, disconnectFilters} from './AudioManipulation';
+import { initializePeer, makeCall, switchInput , disconnectPeer} from './P2PConnection';
+//import { connectFilters, disconnectFilters} from './AudioManipulation';
 import './App.css';
 
 function App() {
@@ -12,7 +12,7 @@ function App() {
   const [outputs, setOutputs] = useState([]);
   const [inputs, setInputs] = useState([]);  
   const [peerInit, setPeerInit] = useState(false);
-  const [filter, setFilter] = useState(false); 
+  //const [filter, setFilter] = useState(false); 
   const remoteAudioRef = useRef(null);
 
   useEffect(() => { //set up audio outputs and inputs
@@ -73,14 +73,19 @@ function App() {
     });
   };
 
-  const handleFilterToggle = () => {
-    setFilter(!filter); 
-    if(!filter){
-      connectFilters();
-    } else {
-      disconnectFilters();
-    }
+  const handleDisconnect = () => {
+    disconnectPeer();
+    setRemoteStream(null);
   }
+
+  // const handleFilterToggle = () => {
+  //   setFilter(!filter); 
+  //   if(!filter){
+  //     connectFilters();
+  //   } else {
+  //     disconnectFilters();
+  //   }
+  // }
 
   return (
     <div className="App">
@@ -98,7 +103,7 @@ function App() {
         onChange={(e) => setPeerId(e.target.value)}
         disabled={remoteStream}
       />
-      <button onClick={handleCall} disabled={remoteStream || !peerInit}>Call</button>
+      <button onClick={handleCall} disabled={remoteStream || !peerInit || peerId === ''}>Call</button>
       <br />
 
       <label>
@@ -115,10 +120,11 @@ function App() {
       <select value={output} onChange={handleOutputChange}>
         {outputs}
       </select>
-
-      <br />
+      {/* 
       <input type="checkbox" id="toggleFilter" name="toggleFilter" value={filter} onChange={handleFilterToggle}/>
-      <label for="toggleFilter"> Toggle Filter</label>
+      <label for="toggleFilter"> Toggle Filter</label> */}
+      <br />
+      {remoteStream && <button onClick={handleDisconnect} >Disconnect</button>}
       <audio ref={remoteAudioRef} autoPlay></audio>
     </div>
   );
