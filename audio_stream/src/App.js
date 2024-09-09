@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializePeer, makeCall, switchInput } from './P2PConnection';
+import { connectFilters, disconnectFilters} from './AudioManipulation';
 import './App.css';
 
 function App() {
-
-  const [userId, setUserId] = useState('');
+  const [remoteStream, setRemoteStream] = useState(null);
   const [peerId, setPeerId] = useState('');
+  const [userId, setUserId] = useState('');
   const [output, setOutput] = useState("default");
   const [input, setInput] = useState("default");
   const [outputs, setOutputs] = useState([]);
   const [inputs, setInputs] = useState([]);  
   const [peerInit, setPeerInit] = useState(false);
-  const [callActive, setCallActive] = useState(false);
+  const [filter, setFilter] = useState(false); 
   const remoteAudioRef = useRef(null);
 
   useEffect(() => { //set up audio outputs and inputs
@@ -38,11 +39,17 @@ function App() {
     });
   }, []);
 
+  useEffect(() => { //set up media stream
+    if (remoteStream && remoteAudioRef.current) {
+      //do audio manipulation?
+      remoteAudioRef.current.srcObject = remoteStream; 
+    }
+  }, [remoteStream]);
+
   const handleInputChange = (e) => {
     setInput(e.target.value); 
-    switchInput(e.target.value, (stream) => { //set up media stream callback
-      remoteAudioRef.current.srcObject = stream
-      setCallActive(true);
+    switchInput(e.target.value, (stream) => {
+      setRemoteStream(stream);
     });
   }
 
@@ -50,24 +57,30 @@ function App() {
     setOutput(e.target.value);
     if(remoteAudioRef.current){
       remoteAudioRef.current.setSinkId(e.target.value);
-      setCallActive(true);
     }
   }
 
   const handleID = () => {
-    initializePeer(userId, input, (stream) => { //set up media stream callback
-      remoteAudioRef.current.srcObject = stream
-      setCallActive(true);
+    initializePeer(userId, input, (stream) => {
+      setRemoteStream(stream);
     });
     setPeerInit(true); 
   }
   
   const handleCall = () => {
-    makeCall(peerId, input, (stream) => { //set up media stream callback
-      remoteAudioRef.current.srcObject = stream
-      setCallActive(true);
+    makeCall(peerId, input, (stream) => {
+      setRemoteStream(stream);
     });
   };
+
+  const handleFilterToggle = () => {
+    setFilter(!filter); 
+    if(!filter){
+      connectFilters();
+    } else {
+      disconnectFilters();
+    }
+  }
 
   return (
     <div className="App">
@@ -83,9 +96,9 @@ function App() {
         placeholder='Enter ID to connect to'
         value={peerId}
         onChange={(e) => setPeerId(e.target.value)}
-        disabled={callActive}
+        disabled={remoteStream}
       />
-      <button onClick={handleCall} disabled={callActive || !peerInit}>Call</button>
+      <button onClick={handleCall} disabled={remoteStream || !peerInit}>Call</button>
       <br />
 
       <label>
@@ -103,6 +116,9 @@ function App() {
         {outputs}
       </select>
 
+      <br />
+      <input type="checkbox" id="toggleFilter" name="toggleFilter" value={filter} onChange={handleFilterToggle}/>
+      <label for="toggleFilter"> Toggle Filter</label>
       <audio ref={remoteAudioRef} autoPlay></audio>
     </div>
   );

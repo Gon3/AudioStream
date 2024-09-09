@@ -22,7 +22,7 @@ const replaceCallListener = (inputId, callback) => {//helper function for replac
                     callback(remoteAudioStream); //send audio stream from remote peer
                 });
             }); 
-            console.log(call);
+            //console.log(call);
         };
         peer.on('call', handleCall); 
     }
