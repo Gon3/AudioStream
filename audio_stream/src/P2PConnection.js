@@ -1,5 +1,6 @@
 //handles all functions pertaining to peer object
-import Peer from 'peerjs'
+import Peer from 'peerjs';
+import { connectFilters, disconnectFilters, resetNodes} from './AudioManipulation';
 
 let peer = null;
 let call = null; 
@@ -7,16 +8,17 @@ let localStream = null;
 let remoteStream = null;
 let handleCall = null; 
 
-const replaceCallListener = (inputId, callback) => {//helper function for replacing call event listener of peer object for input switch
+const replaceCallListener = (inputId, filter, callback) => {//helper function for replacing call event listener of peer object for input switch
     if(peer){
         if(handleCall) peer.off('call', handleCall);
         handleCall = (incoming) => { //what to do when receiving calls
             if(call) call.close();
             call = incoming; 
             navigator.mediaDevices.getUserMedia({audio: {deviceId: {exact: inputId}}}).then((stream) => { //get stream from current audio input (microphone)
-                localStream = stream; 
+                localStream = connectFilters(stream); 
+                if(!filter) disconnectFilters();
                 //console.log(stream.getTracks());
-                incoming.answer(stream);
+                incoming.answer(localStream);
                 incoming.on('stream', (remoteAudioStream) => {
                     remoteStream = remoteAudioStream;
                     callback(remoteAudioStream); //send audio stream from remote peer
@@ -32,31 +34,32 @@ const replaceCallListener = (inputId, callback) => {//helper function for replac
     }
 }
 
-const switchInput = (inputId, callback) => {
-    replaceCallListener(inputId, callback); 
+const switchInput = (inputId, filter, callback) => {
+    replaceCallListener(inputId, filter, callback); 
     if(call){
         let newId = call.peer;
         call.close();
-        makeCall(newId, inputId, callback); 
+        makeCall(newId, inputId, filter, callback); 
     }
 }
 
-const initializePeer = (userId, inputId, callback) => {
+const initializePeer = (userId, inputId, filter, callback) => {
     peer = new Peer(userId);//create peer object
 
     peer.on('open', (id) => { 
         console.log('My peer ID is: ' + id);
     });
 
-    replaceCallListener(inputId, callback); //set the call eventlister to respond to incoming calls
+    replaceCallListener(inputId, filter, callback); //set the call eventlister to respond to incoming calls
 }
 
-const makeCall = (userId, inputId, callback) => { //what to do when initiating call
+const makeCall = (userId, inputId, filter, callback) => { //what to do when initiating call
     navigator.mediaDevices.getUserMedia({audio: {deviceId: {exact: inputId}}}).then((stream) => {
-        localStream = stream; 
+        localStream = connectFilters(stream); 
+        if(!filter) disconnectFilters();
         //console.log(inputId);
         //console.log(stream.getTracks());
-        call = peer.call(userId, stream); 
+        call = peer.call(userId, localStream); 
         call.on('stream', (remoteAudioStream) => {
             remoteStream = remoteAudioStream;
             callback(remoteAudioStream); //send audio stream from remote peer
@@ -71,6 +74,8 @@ const makeCall = (userId, inputId, callback) => { //what to do when initiating c
 const disconnectPeer = () => {
     //if(peer) peer.disconnect(); 
     if(call){ call.close(); call = null;}
+    resetNodes();
+    
 }
 
 const getLocalStream = () => localStream;

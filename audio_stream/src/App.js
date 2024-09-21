@@ -12,7 +12,7 @@ function App() {
   const [outputs, setOutputs] = useState([]);
   const [inputs, setInputs] = useState([]);  
   const [peerInit, setPeerInit] = useState(false);
-  //const [filter, setFilter] = useState(false); 
+  const [filter, setFilter] = useState(false); 
   const remoteAudioRef = useRef(null);
 
   useEffect(() => { //set up audio outputs and inputs
@@ -48,7 +48,7 @@ function App() {
 
   const handleInputChange = (e) => {
     setInput(e.target.value); 
-    switchInput(e.target.value, (stream) => {
+    switchInput(e.target.value, filter, (stream) => {
       setRemoteStream(stream);
     });
   }
@@ -61,14 +61,14 @@ function App() {
   }
 
   const handleID = () => {
-    initializePeer(userId, input, (stream) => {
+    initializePeer(userId, input, filter, (stream) => {
       setRemoteStream(stream);
     });
     setPeerInit(true); 
   }
   
   const handleCall = () => {
-    makeCall(peerId, input, (stream) => {
+    makeCall(peerId, input, filter, (stream) => {
       setRemoteStream(stream);
     });
   };
@@ -78,14 +78,12 @@ function App() {
     setRemoteStream(null);
   }
 
-  // const handleFilterToggle = () => {
-  //   setFilter(!filter); 
-  //   if(!filter){
-  //     connectFilters();
-  //   } else {
-  //     disconnectFilters();
-  //   }
-  // }
+  const handleFilterToggle = () => {
+    setFilter(!filter); 
+    switchInput(input, !filter, (stream) => {
+      setRemoteStream(stream);
+    });
+  }
 
   return (
     <div className="App">
@@ -120,9 +118,9 @@ function App() {
       <select value={output} onChange={handleOutputChange}>
         {outputs}
       </select>
-      {/* 
+      <br />
       <input type="checkbox" id="toggleFilter" name="toggleFilter" value={filter} onChange={handleFilterToggle}/>
-      <label for="toggleFilter"> Toggle Filter</label> */}
+      <label for="toggleFilter"> Toggle Filter</label> 
       <br />
       {remoteStream && <button onClick={handleDisconnect} >Disconnect</button>}
       <audio ref={remoteAudioRef} autoPlay></audio>

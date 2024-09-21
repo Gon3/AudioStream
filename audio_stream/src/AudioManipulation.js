@@ -2,38 +2,45 @@ let audioContext = null
 let sourceNode = null; 
 let gainNode = null; 
 let filterNode = null;
+let destNode = null;
 
-const initFilters = () => {
+const initFilters = (stream) => {
     audioContext = new AudioContext();
-    const myAudio = document.querySelector("audio");
-    console.log(myAudio);
-    sourceNode = audioContext.createMediaElementSource(myAudio);
+    sourceNode = audioContext.createMediaStreamSource(stream);
+    destNode = audioContext.createMediaStreamDestination();
     gainNode = audioContext.createGain();
     gainNode.gain.value = 0.75;
 
     filterNode = audioContext.createBiquadFilter();
     filterNode.type = 'lowpass'
     filterNode.frequency.value = 200; 
-
-    sourceNode.connect(gainNode);
-    gainNode.connect(filterNode);
-    filterNode.connect(audioContext.destination);
 }
 
-const connectFilters = () => {
+const connectFilters = (stream) => { 
+    console.log(sourceNode);
     if(!sourceNode)
-        return initFilters();
+        initFilters(stream);
     sourceNode.connect(gainNode);
     gainNode.connect(filterNode);
-    filterNode.connect(audioContext.destination);
+    filterNode.connect(destNode);
+    return destNode.stream; 
 }
 
 const disconnectFilters = () => {
     if(sourceNode){
         sourceNode.disconnect(gainNode);
         gainNode.disconnect(filterNode);
-        filterNode.disconnect(audioContext.destination); 
-    } 
+        filterNode.disconnect(destNode); 
+        sourceNode.connect(destNode); 
+    }
 }
 
-export {connectFilters, disconnectFilters}; 
+const resetNodes = () => {
+    audioContext = null; 
+    sourceNode = null;
+    gainNode = null; 
+    filterNode = null;
+    destNode = null;
+}
+
+export {connectFilters, disconnectFilters, resetNodes}; 
