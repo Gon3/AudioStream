@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializePeer, makeCall, switchInput , disconnectPeer} from './P2PConnection';
 //import { connectFilters, disconnectFilters} from './AudioManipulation';
+import {setUpAnalyzer, resetAnalyzer} from './StreamAnalyzer'; 
 import './App.css';
 
 function App() {
@@ -40,9 +41,11 @@ function App() {
   }, []);
 
   useEffect(() => { //set up media stream
+    resetAnalyzer();
     if (remoteStream && remoteAudioRef.current) {
-      //do audio manipulation?
       remoteAudioRef.current.srcObject = remoteStream; 
+      //do stream analyzer stuff
+      setUpAnalyzer(remoteStream); 
     }
   }, [remoteStream]);
 
@@ -124,6 +127,8 @@ function App() {
       <br />
       {remoteStream && <button onClick={handleDisconnect} >Disconnect</button>}
       <audio ref={remoteAudioRef} autoPlay></audio>
+      <br/>
+      <canvas id="waveform" width={800} height={400} style={{ border: '1px solid black' }}/>
     </div>
   );
 }
